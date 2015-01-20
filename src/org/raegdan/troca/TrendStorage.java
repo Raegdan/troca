@@ -6,6 +6,11 @@ public class TrendStorage {
 
 	public void storeRates(HashMap<String, Double> rates, String dataSource,
 			int utcTimestamp) throws Exception {
+		storeRates(rates, dataSource, utcTimestamp, false, 0);
+	}	
+	
+	public void storeRates(HashMap<String, Double> rates, String dataSource,
+			int utcTimestamp, boolean expungeOldData, int expungeThreshold) throws Exception {
 		// Override this to implement a trend storage
 	}
 

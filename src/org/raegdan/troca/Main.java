@@ -28,6 +28,7 @@ public class Main {
 	private static String db = "";
 	private static String dbType = "";
 	private static int daemon = 0;
+	private static int langolier = 0;
 
 	private static String ts() {
 		return String.format("[%1$td.%1$tm.%1$tY %1$tH:%1$tM:%1$tS.%1$tL] ",
@@ -244,6 +245,8 @@ public class Main {
 		out("  [ --timestamp ]                                 : Prepend timestamps to output.");
 		out("                                                    Incompatible with --quiet.");
 		out("  [ -q | --quiet ]                                : Print nothing, requires --db.");
+		out("  [ -l | --langolier N ]                          : Spawn a Langolier that eats");
+		out("                                                    database records older than N sec.");
 		out();
 		out("Data sources:");
 		out("  y | yahoo    : Yahoo Finance (default) -- supports most of world currencies");
@@ -388,6 +391,22 @@ public class Main {
 				}
 
 				break;
+				
+			case "-l":
+			case "--langolier":
+				i++;
+				if (i >= args.length)
+					usage("--langolier requires an argument");
+
+				try {
+					langolier = Integer.parseInt(args[i]);
+					if (langolier < 1) throw new NumberFormatException();
+				} catch (NumberFormatException e) {
+					usage(args[i]
+							+ " is not a valid argument for --langolier, integer number above zero needed");
+				}			
+				
+				break;
 
 			case "--quiet":
 			case "-q":
@@ -414,6 +433,10 @@ public class Main {
 
 		if (quiet && !dbIsSet) {
 			usage("--quiet makes no sense without database output (--db-type and --db).");
+		}
+		
+		if (langolier > 0 && !dbIsSet) {
+			usage("--langolier is set without --db and --db-type: nowhere to expunge old entries from!");
 		}
 
 		if (dbIsSet) {
@@ -467,7 +490,7 @@ public class Main {
 			if (dbIsSet) {
 				try {
 					storage.storeRates(rates, handler.getDataSource(),
-							(int) (new Date().getTime() / 1000));
+							(int) (new Date().getTime() / 1000), (langolier > 0), langolier);
 				} catch (Exception e) {
 					printException(e);
 				}

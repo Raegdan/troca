@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map.Entry;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -36,6 +38,12 @@ public class JSONTrendStorage extends TrendStorage {
 	@Override
 	public void storeRates(HashMap<String, Double> rates, String dataSource,
 			int utcTimestamp) throws Exception {
+		storeRates(rates, dataSource, utcTimestamp, false, 0);
+	}
+
+	@Override
+	public void storeRates(HashMap<String, Double> rates, String dataSource,
+			int utcTimestamp, boolean expungeOldData, int expungeThreshold) throws Exception {
 		JsonNodeFactory jsnf = new JsonNodeFactory(true);
 		ObjectNode dsNode = checkJsonStructure(rootNode, jsnf, dataSource);
 
@@ -53,6 +61,19 @@ public class JSONTrendStorage extends TrendStorage {
 
 			currencyPairNode.put(Integer.toString(utcTimestamp),
 					rate.getValue());
+			
+			if (expungeOldData) {
+				HashSet<String> expiredEntries = new HashSet<String>();
+				Iterator<String> entries = currencyPairNode.fieldNames();
+				while (entries.hasNext()) {
+					String entry = entries.next();
+					if (Integer.parseInt(entry) < (utcTimestamp - expungeThreshold)) {
+						expiredEntries.add(entry);
+					}
+				}
+				
+				for (String entry : expiredEntries) currencyPairNode.remove(entry);
+			}
 		}
 
 		saveFile();
